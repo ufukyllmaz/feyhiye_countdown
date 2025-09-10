@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tatile Geri Sayım</title>
+    <title>Cuma 18:00 Geri Sayım</title>
     <style>
         * {
             margin: 0;
@@ -19,6 +19,7 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            transition: background 1s ease;
         }
 
         .container {
@@ -39,12 +40,20 @@
             font-weight: bold;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            line-height: 1.2;
         }
 
         .target-date {
             color: rgba(255, 255, 255, 0.8);
             font-size: 1.2rem;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            font-style: italic;
         }
 
         .countdown {
@@ -106,6 +115,13 @@
             opacity: 0.9;
         }
 
+        .total-minutes {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            margin-top: 15px;
+            font-style: italic;
+        }
+
         .finished {
             background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
         }
@@ -147,7 +163,8 @@
 <body>
     <div class="container" id="container">
         <div class="title" id="title">Tatile Geri Sayım</div>
-        <div class="target-date">12 Eylül 2025, Cuma 18:00'e</div>
+        <div class="target-date" id="targetDate">12 Eylül 2025, Cuma 18:00</div>
+        <div class="subtitle" id="subtitle"></div>
         
         <div class="countdown" id="countdown">
             <div class="time-unit">
@@ -173,6 +190,10 @@
         </div>
 
         <div class="message" id="message">Hedefe doğru ilerliyoruz...</div>
+        
+        <div class="total-minutes" id="totalMinutes">
+            Toplam: 0 dakika kaldı
+        </div>
     </div>
 
     <script>
@@ -182,11 +203,33 @@
         
         let currentTarget = firstTarget;
         let isSecondPhase = false;
+        let isWorkTime = false;
         const startDate = new Date().getTime();
+        let countdownInterval;
 
         // Hangi aşamada olduğumuzu kontrol et
         function checkPhase() {
             const now = new Date().getTime();
+            
+            if (now >= secondTarget && !isWorkTime) {
+                // Çalışma zamanına geçiş
+                isWorkTime = true;
+                isSecondPhase = true;
+                
+                // Final ekranını göster
+                document.getElementById('container').classList.add('finished');
+                document.body.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)';
+                document.getElementById('title').innerHTML = 'Tatil Bitti<br>Çalış Köpek! 🐕‍🦺';
+                document.getElementById('targetDate').innerHTML = 'İş başı yapacan naapacan!';
+                document.getElementById('subtitle').innerHTML = 'Artık çalışma vakti...';
+                document.getElementById('countdown').innerHTML = '<div style="font-size: 2.5rem; color: white; font-weight: bold;">ÇALIŞ! 💼</div>';
+                document.getElementById('message').innerHTML = 'Haydi işe, kölee! Tatil bitti! 😤';
+                document.getElementById('totalMinutes').innerHTML = 'Çalışma vakti geldi!';
+                document.getElementById('progressFill').style.width = '100%';
+                clearInterval(countdownInterval);
+                return;
+            }
+            
             if (now >= firstTarget && !isSecondPhase) {
                 // İkinci aşamaya geçiş
                 isSecondPhase = true;
@@ -195,7 +238,7 @@
                 // Başlık ve alt başlığı değiştir
                 document.getElementById('title').innerHTML = 'Tatildesin, teyze chill!';
                 document.getElementById('targetDate').innerHTML = '22 Eylül 2025, Pazartesi 09:00';
-                document.getElementById('subtitle').innerHTML = 'İşe Başlayama';
+                document.getElementById('subtitle').innerHTML = ' İşe Başlamaya';
                 
                 // Arka plan rengini değiştir
                 document.body.style.background = 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%)';
@@ -204,6 +247,11 @@
 
         function updateCountdown() {
             checkPhase(); // Her güncelleme sırasında faz kontrolü
+            
+            // Eğer çalışma zamanına geçtiyse countdown'u durdur
+            if (isWorkTime) {
+                return;
+            }
             
             const now = new Date().getTime();
             const distance = currentTarget - now;
@@ -220,6 +268,15 @@
                 document.getElementById('hours').innerHTML = hours.toString().padStart(2, '0');
                 document.getElementById('minutes').innerHTML = minutes.toString().padStart(2, '0');
                 document.getElementById('seconds').innerHTML = seconds.toString().padStart(2, '0');
+
+                // Toplam dakika hesaplama ve gösterme
+                const totalMinutes = Math.floor(distance / (1000 * 60));
+                const totalMinutesElement = document.getElementById('totalMinutes');
+                if (totalMinutes > 1440) { // 1 günden fazlaysa
+                    totalMinutesElement.innerHTML = `Toplam ${totalMinutes.toLocaleString('tr-TR')} dakika kaldı`;
+                } else {
+                    totalMinutesElement.innerHTML = `Toplam ${totalMinutes} dakika kaldı`;
+                }
 
                 // İlerleme çubuğu
                 const totalDuration = currentTarget - (isSecondPhase ? firstTarget : startDate);
@@ -257,23 +314,24 @@
             } else {
                 // Süre tamamlandığında
                 if (isSecondPhase) {
-                    // Tatil bittiğinde
+                    // Tatil bittiğinde - artık çalışma zamanı!
                     document.getElementById('container').classList.add('finished');
-                    document.getElementById('title').innerHTML = '🎯 İşe Başlama Zamanı! 🎯';
-                    document.getElementById('countdown').innerHTML = '<div style="font-size: 2rem; color: white;">İŞ BAŞI!</div>';
-                    document.getElementById('message').innerHTML = 'Tatil bitti, çalış KÖLEE!';
+                    document.body.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)';
+                    document.getElementById('title').innerHTML = 'Tatil Bitti<br>Çalış Köpek! 🐕‍🦺';
+                    document.getElementById('targetDate').innerHTML = 'İş başı yapacan naapacan!';
+                    document.getElementById('subtitle').innerHTML = 'Artık çalışma vakti...';
+                    document.getElementById('countdown').innerHTML = '<div style="font-size: 2.5rem; color: white; font-weight: bold;">ÇALIŞ! 💼</div>';
+                    document.getElementById('message').innerHTML = 'Haydi işe, kölee! Tatil bitti! 😤';
+                    document.getElementById('totalMinutes').innerHTML = 'Çalışma vakti geldi!';
                     document.getElementById('progressFill').style.width = '100%';
                     clearInterval(countdownInterval);
-                } else {
-                    // İlk hedef tamamlandığında otomatik olarak ikinci aşamaya geçecek
-                    // checkPhase() fonksiyonu bunu halledecek
                 }
             }
         }
 
         // Sayacı başlat
         updateCountdown();
-        const countdownInterval = setInterval(updateCountdown, 1000);
+        countdownInterval = setInterval(updateCountdown, 1000);
 
         // Sayfa yüklendiğinde animasyon
         window.addEventListener('load', function() {
